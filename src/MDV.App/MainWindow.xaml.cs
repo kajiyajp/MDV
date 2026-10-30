@@ -42,9 +42,11 @@ public sealed partial class MainWindow : Window
         try { _settings = SettingsService.Load(); } catch { _settings = new AppSettings(); }
         BuildLanguageMenu();
 
-        // テーマ(「システムに合わせる」でのOS側の切替を含む)が変わるたびに、ウィンドウの背景を塗り直す
-        RootGrid.ActualThemeChanged += (s, e) => ApplyWindowBackground();
+        // テーマ(「システムに合わせる」でのOS側の切替を含む)が変わるたびに、ウィンドウの背景とテーマ切替アイコンを更新する
+        RootGrid.ActualThemeChanged += (s, e) => { ApplyWindowBackground(); UpdateThemeToggleIcon(); };
         ApplyWindowBackground();
+        UpdateThemeToggleIcon();
+        AddZoomAccelerators();
 
         this.Closed += (s, e) => PersistSettings();
     }
@@ -264,6 +266,7 @@ public sealed partial class MainWindow : Window
         try { _settings = SettingsService.Load(); } catch { _settings = new AppSettings(); }
         ApplyZoom(_settings.ZoomFactor);
         StatusBar.Visibility = _settings.ShowStatusBar ? Visibility.Visible : Visibility.Collapsed;
+        StatusBarItem.IsChecked = _settings.ShowStatusBar;
         SetTheme(_settings.Theme);   // テーマを適用する（永続化はしない）
     }
 
@@ -641,7 +644,10 @@ public sealed partial class MainWindow : Window
         _currentTheme = mode;
         ThemeService.ApplyToWindow(this, mode);
         ApplyWindowBackground();
-        ThemeToggle.Content = ThemeService.ToggleIcon(mode);
+        UpdateThemeToggleIcon();
+        ThemeLightItem.IsChecked = mode == ThemeMode.Light;
+        ThemeDarkItem.IsChecked = mode == ThemeMode.Dark;
+        ThemeSystemItem.IsChecked = mode == ThemeMode.System;
         // WebView2側のCSSも切替
         if (_webReady)
             try
@@ -667,10 +673,34 @@ public sealed partial class MainWindow : Window
     private void OnThemeLight(object s, RoutedEventArgs e) { SetTheme(ThemeMode.Light); PersistSettings(); }
     private void OnThemeDark(object s, RoutedEventArgs e) { SetTheme(ThemeMode.Dark); PersistSettings(); }
     private void OnThemeSystem(object s, RoutedEventArgs e) { SetTheme(ThemeMode.System); PersistSettings(); }
+    // 「システムに合わせる」のときも含め、いま表示されているテーマの逆に切り替える(Issue #16)。
+    // 設定値(_currentTheme)で判断すると、OSがダークで「システム」のとき最初のクリックがダーク→ダークになり見た目が変わらない
     private void OnThemeToggle(object s, RoutedEventArgs e)
     {
-        SetTheme(_currentTheme == ThemeMode.Dark ? ThemeMode.Light : ThemeMode.Dark);
+        SetTheme(RootGrid.ActualTheme == ElementTheme.Dark ? ThemeMode.Light : ThemeMode.Dark);
         PersistSettings();
+    }
+
+    // テーマ切替アイコンは、押すと切り替わる先(いま表示されているテーマの逆)を表す
+    private void UpdateThemeToggleIcon() =>
+        ThemeToggle.Content = ThemeService.ToggleIcon(RootGrid.ActualTheme == ElementTheme.Dark);
+
+    // [表示]→[拡大]/[縮小]のショートカットを登録する。WebView2にフォーカスがあるときは template.html の keydown が
+    // 処理するが、それだけではメニューバー等にフォーカスがあると効かないため、ウィンドウ側にも登録する。
+    // 記号キー(+ / -)は VirtualKey に名前が無いのでキーコードで指定する(187 = VK_OEM_PLUS, 189 = VK_OEM_MINUS)。
+    // テンキーの + / - も同じ操作にする。
+    // JIS 配列では + は ; キー(187)を Shift 付きで押すため、Ctrl+Shift+187 も登録する(文書側の ev.key === '+' と合わせる)
+    private void AddZoomAccelerators()
+    {
+        foreach (var key in new[] { (Windows.System.VirtualKey)187, Windows.System.VirtualKey.Add })
+            ZoomInItem.KeyboardAccelerators.Add(new Microsoft.UI.Xaml.Input.KeyboardAccelerator
+                { Key = key, Modifiers = Windows.System.VirtualKeyModifiers.Control });
+        ZoomInItem.KeyboardAccelerators.Add(new Microsoft.UI.Xaml.Input.KeyboardAccelerator
+            { Key = (Windows.System.VirtualKey)187,
+              Modifiers = Windows.System.VirtualKeyModifiers.Control | Windows.System.VirtualKeyModifiers.Shift });
+        foreach (var key in new[] { (Windows.System.VirtualKey)189, Windows.System.VirtualKey.Subtract })
+            ZoomOutItem.KeyboardAccelerators.Add(new Microsoft.UI.Xaml.Input.KeyboardAccelerator
+                { Key = key, Modifiers = Windows.System.VirtualKeyModifiers.Control });
     }
 
     private void OnZoomIn(object s, RoutedEventArgs e)
@@ -709,6 +739,7 @@ public sealed partial class MainWindow : Window
     private void OnToggleStatusBar(object s, RoutedEventArgs e)
     {
         StatusBar.Visibility = StatusBar.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+        StatusBarItem.IsChecked = StatusBar.Visibility == Visibility.Visible;
         PersistSettings();
     }
 }

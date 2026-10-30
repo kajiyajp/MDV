@@ -68,7 +68,7 @@
     <value>Reload</value>
   </data>
   <data name="MenuToggleStatusBar.Text" xml:space="preserve">
-    <value>Show/hide status bar</value>
+    <value>Status bar</value>
   </data>
   <data name="MenuHelp.Title" xml:space="preserve">
     <value>Help</value>

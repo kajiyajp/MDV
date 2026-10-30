@@ -90,8 +90,8 @@
     <comment>View menu: re-read the current file from disk (F5). | ja: 再読み込み</comment>
   </data>
   <data name="MenuToggleStatusBar.Text" xml:space="preserve">
-    <value>Show/hide status bar</value>
-    <comment>View menu: toggle the status bar (encoding / line endings) at the bottom. | ja: ステータスバー表示切替</comment>
+    <value>Status bar</value>
+    <comment>View menu: item with a check mark that shows or hides the status bar (encoding / line endings) at the bottom. | ja: ステータスバー</comment>
   </data>
   <data name="MenuHelp.Title" xml:space="preserve">
     <value>Help</value>

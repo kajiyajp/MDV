@@ -26,5 +26,6 @@ public static class ThemeService
         _ => "theme-system"
     };
 
-    public static string ToggleIcon(ThemeMode mode) => mode == ThemeMode.Dark ? "☀️" : "🌙";
+    // 表示中のテーマ(「システムに合わせる」のときは実際の明暗)から、テーマ切替ボタンのアイコンを決める
+    public static string ToggleIcon(bool showingDark) => showingDark ? "☀️" : "🌙";
 }

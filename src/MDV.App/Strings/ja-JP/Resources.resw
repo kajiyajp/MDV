@@ -73,7 +73,7 @@
     <value>再読み込み</value>
   </data>
   <data name="MenuToggleStatusBar.Text" xml:space="preserve">
-    <value>ステータスバー表示切替</value>
+    <value>ステータスバー</value>
   </data>
   <data name="MenuHelp.Title" xml:space="preserve">
     <value>ヘルプ</value>

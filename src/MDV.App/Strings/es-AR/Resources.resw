@@ -166,7 +166,7 @@
     <value>Recargar</value>
   </data>
   <data name="MenuToggleStatusBar.Text" xml:space="preserve">
-    <value>Mostrar/ocultar la barra de estado</value>
+    <value>Barra de estado</value>
   </data>
   <data name="MenuHelp.Title" xml:space="preserve">
     <value>Ayuda</value>

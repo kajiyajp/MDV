@@ -45,15 +45,17 @@
                     </MenuFlyoutItem>
                 </MenuBarItem>
                 <MenuBarItem x:Uid="MenuView">
+                    <!-- 選択中のテーマに印を付ける(MainWindow.SetTheme で同期) -->
                     <MenuFlyoutSubItem x:Uid="MenuTheme">
-                        <MenuFlyoutItem x:Uid="MenuThemeLight" Click="OnThemeLight"/>
-                        <MenuFlyoutItem x:Uid="MenuThemeDark" Click="OnThemeDark"/>
-                        <MenuFlyoutItem x:Uid="MenuThemeSystem" Click="OnThemeSystem"/>
+                        <RadioMenuFlyoutItem x:Name="ThemeLightItem" x:Uid="MenuThemeLight" GroupName="Theme" Click="OnThemeLight"/>
+                        <RadioMenuFlyoutItem x:Name="ThemeDarkItem" x:Uid="MenuThemeDark" GroupName="Theme" Click="OnThemeDark"/>
+                        <RadioMenuFlyoutItem x:Name="ThemeSystemItem" x:Uid="MenuThemeSystem" GroupName="Theme" Click="OnThemeSystem" IsChecked="True"/>
                     </MenuFlyoutSubItem>
                     <!-- 項目は翻訳のある言語から実行時に生成する(MainWindow.BuildLanguageMenu) -->
                     <MenuFlyoutSubItem x:Name="LanguageMenu" x:Uid="MenuLanguage"/>
-                    <MenuFlyoutItem x:Uid="MenuZoomIn" Click="OnZoomIn" KeyboardAcceleratorTextOverride="Ctrl +"/>
-                    <MenuFlyoutItem x:Uid="MenuZoomOut" Click="OnZoomOut" KeyboardAcceleratorTextOverride="Ctrl -"/>
+                    <!-- Ctrl + / Ctrl - のショートカットは記号キーに名前が無いためコードで登録する(MainWindow.AddZoomAccelerators) -->
+                    <MenuFlyoutItem x:Name="ZoomInItem" x:Uid="MenuZoomIn" Click="OnZoomIn" KeyboardAcceleratorTextOverride="Ctrl +"/>
+                    <MenuFlyoutItem x:Name="ZoomOutItem" x:Uid="MenuZoomOut" Click="OnZoomOut" KeyboardAcceleratorTextOverride="Ctrl -"/>
                     <MenuFlyoutItem x:Uid="MenuZoomReset" Click="OnZoomReset">
                         <MenuFlyoutItem.KeyboardAccelerators>
                             <KeyboardAccelerator Key="Number0" Modifiers="Control"/>
@@ -65,7 +67,7 @@
                             <KeyboardAccelerator Key="F5"/>
                         </MenuFlyoutItem.KeyboardAccelerators>
                     </MenuFlyoutItem>
-                    <MenuFlyoutItem x:Uid="MenuToggleStatusBar" Click="OnToggleStatusBar"/>
+                    <ToggleMenuFlyoutItem x:Name="StatusBarItem" x:Uid="MenuToggleStatusBar" Click="OnToggleStatusBar" IsChecked="True"/>
                 </MenuBarItem>
                 <MenuBarItem x:Uid="MenuHelp">
                     <MenuFlyoutItem x:Uid="MenuAbout" Click="OnAboutClick">
