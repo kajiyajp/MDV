@@ -61,4 +61,34 @@ public class MarkdownRendererTests
         Assert.DoesNotContain("{{THEME_CLASS}}", html);
         Assert.DoesNotContain("{{BASE_HREF}}", html);
     }
+
+    // 見出しの ID は GitHub と同じ規則にする。期待値は GitHub の Markdown API(2026-10-25)の出力と照合したもの。
+    // 既定(ASCII のみ)では日本語・韓国語などの見出しが "section" になり、目次のリンク(#見出し)が合わなかった
+    [Theory]
+    [InlineData("第一章", "第一章")]
+    [InlineData("日本語の見出し", "日本語の見出し")]
+    [InlineData("첫째 절", "첫째-절")]
+    [InlineData("中文标题", "中文标题")]
+    [InlineData("한글 English 混合", "한글-english-混合")]
+    [InlineData("見出し：コロン", "見出しコロン")]
+    [InlineData("全角　スペース", "全角スペース")]
+    [InlineData("Café déjà vu", "café-déjà-vu")]
+    [InlineData("Hello, World!", "hello-world")]
+    [InlineData("1. Introduction", "1-introduction")]
+    [InlineData("C# and .NET", "c-and-net")]
+    [InlineData("API Reference (v2)", "api-reference-v2")]
+    [InlineData("`code` in heading", "code-in-heading")]
+    public void Heading_id_follows_github(string heading, string id)
+    {
+        var html = MarkdownRenderer.RenderBody("## " + heading);
+        Assert.Contains($"<h2 id=\"{id}\">", html);
+    }
+
+    [Fact] public void Duplicate_headings_get_numbered_ids_like_github()
+    {
+        var html = MarkdownRenderer.RenderBody("## 概要\n\n## 概要\n\n## 概要");
+        Assert.Contains("<h2 id=\"概要\">", html);
+        Assert.Contains("<h2 id=\"概要-1\">", html);
+        Assert.Contains("<h2 id=\"概要-2\">", html);
+    }
 }
