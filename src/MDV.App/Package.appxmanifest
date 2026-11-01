@@ -10,7 +10,7 @@
   <Identity
     Name="kajiya.jp.MDV-MarkdownViewer"
     Publisher="CN=4B6E0E23-C6E1-4738-B976-2E451ECF7CB9"
-    Version="1.0.7.0" />
+    Version="1.0.8.0" />
 
   <mp:PhoneIdentity PhoneProductId="924B0285-C2B0-431E-9799-FBE95DCCCAFA" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
