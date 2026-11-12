@@ -175,6 +175,39 @@
         window.chrome.webview.postMessage(msg);
       }
     });
+    // 文書内のリンク(#17)。
+    //   #見出し      … このページの中でスクロールする
+    //   相対パス     … ホスト(C#)に知らせ、Markdown ファイルなら MDV で開く(postMessage 'link:'。書かれたままの href を渡す)
+    //   http(s)      … ページは移動させず、ホストに知らせる(postMessage 'external:')。ホストが確認してから既定のブラウザで開く。
+    //                  (移動を始めると、ホストの NavigationStarting で取り消しても WebView が先に 1 回要求を送ってしまうため。実測)
+    //   その他のスキーム … 従来どおり
+    window.__scrollToFragment = function (fragment) {
+      var id;
+      try { id = decodeURIComponent(fragment); } catch (e) { id = fragment; }
+      if (id === '' || id.toLowerCase() === 'top') { window.scrollTo(0, 0); return true; }
+      var el = document.getElementById(id) || document.getElementsByName(id)[0];
+      if (el) el.scrollIntoView();
+      return !!el;
+    };
+    function onLinkClick(ev) {
+      var a = ev.target && ev.target.closest && ev.target.closest('a[href], area[href]');
+      if (!a) return;
+      var href = (a.getAttribute('href') || '').trim();
+      var host = window.chrome && window.chrome.webview;
+      if (/^https?:/i.test(a.href) && !/^http:\/\/(document|vendor)\//i.test(a.href) &&
+          (/^[a-z][a-z0-9+.\-]*:/i.test(href) || href.indexOf('//') === 0)) {
+        ev.preventDefault();
+        if (host) host.postMessage('external:' + a.href);
+        return;
+      }
+      if (/^[a-z][a-z0-9+.\-]*:/i.test(href) || href.indexOf('//') === 0) return;
+      ev.preventDefault();
+      if (href.charAt(0) === '#') { window.__scrollToFragment(href.slice(1)); return; }
+      if (href !== '' && host) host.postMessage('link:' + href);
+    }
+    document.addEventListener('click', onLinkClick);
+    // 中クリック(新しいウィンドウで開く操作)も同じに扱う
+    document.addEventListener('auxclick', function (ev) { if (ev.button === 1) onLinkClick(ev); });
     // コードブロック右上に「コピー」ボタンを追加する（Mermaid図は除外）。
     // クリップボードは確実性のためホスト(C#)経由でコピーする（postMessage 'copy:'）。
     // ボタンの文言はホスト(C#)が表示言語の文字列(JS文字列リテラル)に置換する。

@@ -68,6 +68,7 @@
                         </MenuFlyoutItem.KeyboardAccelerators>
                     </MenuFlyoutItem>
                     <ToggleMenuFlyoutItem x:Name="StatusBarItem" x:Uid="MenuToggleStatusBar" Click="OnToggleStatusBar" IsChecked="True"/>
+                    <ToggleMenuFlyoutItem x:Name="ConfirmExternalItem" x:Uid="MenuConfirmExternal" Click="OnToggleConfirmExternal" IsChecked="True"/>
                 </MenuBarItem>
                 <MenuBarItem x:Uid="MenuHelp">
                     <MenuFlyoutItem x:Uid="MenuAbout" Click="OnAboutClick">

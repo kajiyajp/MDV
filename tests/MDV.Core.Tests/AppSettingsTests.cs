@@ -48,3 +48,18 @@ public class AppSettingsLanguageTests
         Assert.Equal(ThemeMode.Dark, back.Theme);
     }
 }
+
+// 外部のリンク・文書を開く前の確認(#17)。既定は確認する。以前の設定ファイル(この項目が無い)でも確認する
+public class AppSettingsConfirmExternalTests
+{
+    [Fact] public void Confirm_external_open_defaults_to_true()
+    {
+        Assert.True(new AppSettings().ConfirmExternalOpen);
+        Assert.True(AppSettings.FromJson("{\"Theme\":1,\"ZoomFactor\":1.2,\"ShowStatusBar\":true,\"Language\":\"\"}").ConfirmExternalOpen);
+    }
+
+    [Fact] public void Confirm_external_open_roundtrips_through_json()
+    {
+        Assert.False(AppSettings.FromJson(new AppSettings { ConfirmExternalOpen = false }.ToJson()).ConfirmExternalOpen);
+    }
+}

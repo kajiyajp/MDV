@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Text.RegularExpressions;
 using Markdig;
 using Markdig.Extensions.AutoIdentifiers;
 using MDV.Core.Models;
@@ -22,7 +23,31 @@ public static class MarkdownRenderer
     // （テンプレート側 mermaid.run({querySelector:'.mermaid'}) がそのまま拾える）。
     public static string RenderBody(string markdown)
     {
-        return Markdown.ToHtml(markdown ?? string.Empty, Pipeline);
+        return RemoveTagsThatReachOut(Markdown.ToHtml(markdown ?? string.Empty, Pipeline));
+    }
+
+    // CSP では止まらず、表示しただけで外へ通信してしまうタグ(#17。実測で確認したもの):
+    //   <meta http-equiv="refresh"> … ページが移動しようとして、WebView が 1 回要求を送り、さらに既定のブラウザでその URL が開く
+    //   <link rel="preconnect"> と <iframe src/srcdoc> … 要求は CSP で止まるが、その前に相手のサーバーへ接続してしまう
+    // GitHub と同じく、文書の HTML からこれらのタグを取り除く(<link> は rel を問わない)。
+    private static readonly Regex TagsThatReachOut = new(
+        @"<(?:meta|link|iframe)(?=[\s/>]|$)[^>]*(?:>|$)",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+    /// <summary>
+    /// 変換後の HTML から &lt;meta&gt;・&lt;link&gt;・&lt;iframe&gt; の開始タグを取り除く。
+    /// Markdig は文字としての &lt; を &amp;lt; にするので、ここで見つかる "&lt;meta" は文書に書かれた生の HTML のタグだけ。
+    /// 取り除いたあとに前後がつながって新しいタグにならないよう、見つからなくなるまで繰り返す。
+    /// </summary>
+    public static string RemoveTagsThatReachOut(string html)
+    {
+        string before;
+        do
+        {
+            before = html;
+            html = TagsThatReachOut.Replace(html, string.Empty);
+        } while (html != before);
+        return html;
     }
 
     public static string BuildHtml(string markdown, ThemeMode theme, string template, string baseDirUri)
