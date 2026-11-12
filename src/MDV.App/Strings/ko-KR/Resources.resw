@@ -165,4 +165,26 @@
   <data name="AboutCreditTranslationEs" xml:space="preserve">
     <value>스페인어 번역</value>
   </data>
+
+  <data name="MenuConfirmExternal.Text" xml:space="preserve">
+    <value>외부 문서·링크를 열기 전에 확인</value>
+  </data>
+  <data name="ExternalOpenTitle" xml:space="preserve">
+    <value>외부 문서나 외부 링크를 엽니다</value>
+  </data>
+  <data name="ExternalOpenTarget" xml:space="preserve">
+    <value>대상:</value>
+  </data>
+  <data name="ExternalOpenDontAsk" xml:space="preserve">
+    <value>다시 경고하지 않음</value>
+  </data>
+  <data name="ExternalOpenSettingHint" xml:space="preserve">
+    <value>[보기] 메뉴에서 언제든 다시 켤 수 있습니다.</value>
+  </data>
+  <data name="ExternalOpenOpen" xml:space="preserve">
+    <value>열기</value>
+  </data>
+  <data name="ExternalOpenCancel" xml:space="preserve">
+    <value>취소</value>
+  </data>
 </root>

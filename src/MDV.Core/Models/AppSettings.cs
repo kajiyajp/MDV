@@ -11,6 +11,8 @@ public class AppSettings
     public bool ShowStatusBar { get; set; } = true;
     /// <summary>UIの表示言語(BCP-47タグ)。空文字はWindowsの表示言語に合わせる</summary>
     public string Language { get; set; } = "";
+    /// <summary>外部のリンク(ブラウザで開く)と、文書のフォルダの外にある文書を開く前に確認するか。既定は確認する</summary>
+    public bool ConfirmExternalOpen { get; set; } = true;
 
     // JSON変換はソース生成(AppSettingsJsonContext)で行う。Release構成(PublishTrimmed)では
     // リフレクションによるJSON変換が無効になり、Serialize(this) が例外になって設定が保存されないため。

@@ -255,4 +255,26 @@
   <data name="AboutCreditTranslationEs" xml:space="preserve">
     <value>Traducción al español</value>
   </data>
+
+  <data name="MenuConfirmExternal.Text" xml:space="preserve">
+    <value>Confirmar antes de abrir documentos y enlaces externos</value>
+  </data>
+  <data name="ExternalOpenTitle" xml:space="preserve">
+    <value>Se abrirá un documento o enlace externo</value>
+  </data>
+  <data name="ExternalOpenTarget" xml:space="preserve">
+    <value>Destino:</value>
+  </data>
+  <data name="ExternalOpenDontAsk" xml:space="preserve">
+    <value>No volver a avisar</value>
+  </data>
+  <data name="ExternalOpenSettingHint" xml:space="preserve">
+    <value>Puede volver a activarlo desde el menú Ver.</value>
+  </data>
+  <data name="ExternalOpenOpen" xml:space="preserve">
+    <value>Abrir</value>
+  </data>
+  <data name="ExternalOpenCancel" xml:space="preserve">
+    <value>Cancelar</value>
+  </data>
 </root>

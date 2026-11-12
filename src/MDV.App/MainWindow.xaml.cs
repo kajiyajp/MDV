@@ -24,6 +24,7 @@ public sealed partial class MainWindow : Window
     private string _template = "";
     private bool _webReady;
     private CoreWebView2Environment? _webEnv;
+    private (string Path, string Fragment)? _pendingFragment;   // リンクで開いた文書と、表示後にスクロールする見出し(OpenDocumentLink)
     private AppSettings _settings = new();
     // WinUI3のWebView2 XAMLコントロールはCoreWebView2Controller/ZoomFactorを公開していないため、
     // CSS(zoom)経由でWebView2側に倍率を適用し、現在値はこのフィールドで保持する
@@ -116,10 +117,16 @@ public sealed partial class MainWindow : Window
         ContentView.CoreWebView2.SetVirtualHostNameToFolderMapping(
             "vendor", Path.Combine(assetsDir, "vendor"),
             CoreWebView2HostResourceAccessKind.Allow);
+        // http://document/... は文書のフォルダとその下にある画像だけを返す(DocumentImages。#17)。
+        // フォルダのマッピングは使わない(画像以外のファイルも読めるようになるため)
+        ContentView.CoreWebView2.AddWebResourceRequestedFilter(DocumentImages.BaseUri + "*", CoreWebView2WebResourceContext.All);
+        ContentView.CoreWebView2.WebResourceRequested += OnDocumentResourceRequested;
+        // リンク先の文書を開いたあと、指定の見出しまでスクロールする
+        ContentView.CoreWebView2.NavigationCompleted += OnContentNavigationCompleted;
 
         _template = LocalizeTemplate(File.ReadAllText(Path.Combine(assetsDir, "template.html")));
 
-        OpenLinksExternally(ContentView.CoreWebView2);
+        OpenLinksExternally(ContentView.CoreWebView2, confirm: true);
 
         // 右クリックの既定メニューを閲覧向けに整理する（保存/検証などを除去し、コピー・印刷・再読み込みを残す）
         ContentView.CoreWebView2.ContextMenuRequested += OnContextMenuRequested;
@@ -145,13 +152,18 @@ public sealed partial class MainWindow : Window
     private static string ToJsString(string value) =>
         "\"" + System.Text.Json.JsonEncodedText.Encode(value).ToString() + "\"";
 
-    // 外部リンク(http/https)はアプリ内WebView2で遷移させず、既定ブラウザで開く
-    private static void OpenLinksExternally(CoreWebView2 core)
+    // 外部リンク(http/https)はアプリ内WebView2で遷移させず、既定ブラウザで開く。
+    // 文書の表示(confirm: true)では、開く前に確認する(ConfirmExternalAsync)。About のライセンス表示は同梱の文書なので確認しない
+    private void OpenLinksExternally(CoreWebView2 core, bool confirm)
     {
+        async void Launch(string uri)
+        {
+            if (!confirm || await ConfirmExternalAsync(uri)) LaunchExternal(uri);
+        }
         core.NewWindowRequested += (s, e) =>
         {
             e.Handled = true;
-            LaunchExternal(e.Uri);
+            if (!DocumentImages.IsDocumentUri(e.Uri)) Launch(e.Uri);
         };
         core.NavigationStarting += (s, e) =>
         {
@@ -160,9 +172,135 @@ public sealed partial class MainWindow : Window
                 uri.Host != "vendor")            // 同梱資産(http://vendor/...)の取得は遮らない
             {
                 e.Cancel = true;
-                LaunchExternal(e.Uri);
+                // 文書の相対リンク(http://document/...)はブラウザに渡さず、ページも移動しない。
+                // (画像を直接ページとして開くと SVG のスクリプトが動きうるため。文書内リンクへの対応は別に行う)
+                if (!DocumentImages.IsDocumentUri(e.Uri)) Launch(e.Uri);
             }
         };
+    }
+
+    private async void OpenExternalLink(string uri)
+    {
+        if (!Uri.TryCreate(uri, UriKind.Absolute, out var u) || (u.Scheme != "http" && u.Scheme != "https") ||
+            DocumentImages.IsDocumentUri(uri) || u.Host == "vendor")
+            return;
+        if (await ConfirmExternalAsync(u.AbsoluteUri)) LaunchExternal(u.AbsoluteUri);
+    }
+
+    // 外部のリンク・文書を開く前に、開く先を見せて確認する。「今後は確認しない」を選んで開くと、
+    // 設定(ConfirmExternalOpen)を切る([表示]メニューの項目から元に戻せる)。確認が切れていれば何も聞かずに true
+    private bool _confirmShowing;
+    private async Task<bool> ConfirmExternalAsync(string target)
+    {
+        if (!_settings.ConfirmExternalOpen) return true;
+        if (_confirmShowing) return false;   // 確認中にもう一度押されたものは開かない(ダイアログは同時に 1 つしか出せない)
+
+        var dontAsk = new CheckBox { Content = Localizer.Get("ExternalOpenDontAsk") };
+        var panel = new StackPanel { Spacing = 8, MaxWidth = 480 };
+        panel.Children.Add(new TextBlock { Text = Localizer.Get("ExternalOpenTarget") });
+        panel.Children.Add(new TextBlock
+        {
+            Text = target, TextWrapping = TextWrapping.Wrap, IsTextSelectionEnabled = true,
+            FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Consolas")
+        });
+        panel.Children.Add(dontAsk);
+        panel.Children.Add(new TextBlock { Text = Localizer.Get("ExternalOpenSettingHint"), FontSize = 12, Opacity = 0.7, TextWrapping = TextWrapping.Wrap });
+        var dialog = new ContentDialog
+        {
+            Title = Localizer.Get("ExternalOpenTitle"),
+            Content = panel,
+            PrimaryButtonText = Localizer.Get("ExternalOpenOpen"),
+            CloseButtonText = Localizer.Get("ExternalOpenCancel"),
+            DefaultButton = ContentDialogButton.Close,   // Enter を押しただけでは開かない
+            XamlRoot = this.Content.XamlRoot,
+            RequestedTheme = (this.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default
+        };
+
+        ContentDialogResult result;
+        _confirmShowing = true;
+        try { result = await dialog.ShowAsync(); }
+        catch { return false; }   // 他のダイアログ(About など)を表示中
+        finally { _confirmShowing = false; }
+
+        if (result != ContentDialogResult.Primary) return false;
+        if (dontAsk.IsChecked == true)
+        {
+            _settings.ConfirmExternalOpen = false;
+            ConfirmExternalItem.IsChecked = false;
+            PersistSettings();
+        }
+        return true;
+    }
+
+    // [表示]→[外部の文書・リンクを開く前に確認する]
+    private void OnToggleConfirmExternal(object s, RoutedEventArgs e)
+    {
+        _settings.ConfirmExternalOpen = ConfirmExternalItem.IsChecked;
+        PersistSettings();
+    }
+
+    // 文書内の相対パスのリンクを開く(#17)。Markdown ファイルなら MDV で開き、# の後ろの見出しまでスクロールする。
+    // それ以外(画像・フォルダ・実行ファイル・存在しないファイルなど)は何もしない
+    private async void OpenDocumentLink(string href)
+    {
+        if (_currentPath == null) return;
+        var target = DocumentLinks.Resolve(Path.GetDirectoryName(_currentPath)!, href);
+        if (target is not { } link) return;
+
+        if (string.Equals(Path.GetFullPath(_currentPath), link.Path, StringComparison.OrdinalIgnoreCase))
+        {
+            // 同じ文書への「ファイル名#見出し」は、読み直さずにスクロールだけする
+            if (link.Fragment != null) await ScrollToFragmentAsync(link.Fragment);
+            return;
+        }
+        // 文書のフォルダの外にある文書は、開く前に確認する
+        if (!DocumentLinks.IsInsideFolder(Path.GetDirectoryName(_currentPath)!, link.Path) &&
+            !await ConfirmExternalAsync(link.Path))
+            return;
+        // 表示し終えたら OnContentNavigationCompleted がスクロールする(開けなかったときは、そのファイルではないのでスクロールしない)
+        _pendingFragment = link.Fragment != null ? (link.Path, link.Fragment) : null;
+        await OpenFileAsync(link.Path);
+    }
+
+    private async Task ScrollToFragmentAsync(string fragment)
+    {
+        try { await ContentView.CoreWebView2.ExecuteScriptAsync($"window.__scrollToFragment && window.__scrollToFragment({ToJsString(fragment)})"); }
+        catch { /* スクロールできなくても文書は読める */ }
+    }
+
+    private async void OnContentNavigationCompleted(CoreWebView2 sender, CoreWebView2NavigationCompletedEventArgs e)
+    {
+        var pending = _pendingFragment;
+        _pendingFragment = null;
+        if (pending is { } p && e.IsSuccess && _currentPath != null &&
+            string.Equals(Path.GetFullPath(_currentPath), p.Path, StringComparison.OrdinalIgnoreCase))
+            await ScrollToFragmentAsync(p.Fragment);
+    }
+
+    // http://document/... の要求に、文書フォルダの画像だけを返す。それ以外は 404(中身なし)
+    private async void OnDocumentResourceRequested(CoreWebView2 sender, CoreWebView2WebResourceRequestedEventArgs e)
+    {
+        var deferral = e.GetDeferral();
+        try
+        {
+            var uri = e.Request.Uri;
+            var folder = _currentPath != null ? Path.GetDirectoryName(_currentPath) : null;
+            // 大きな画像でも画面を止めないよう、読み込みはバックグラウンドで行う
+            var image = folder != null ? await Task.Run(() => DocumentImages.Read(folder, uri)) : null;
+            e.Response = image is { } found
+                ? _webEnv!.CreateWebResourceResponse(new MemoryStream(found.Data).AsRandomAccessStream(), 200, "OK",
+                    $"Content-Type: {found.ContentType}\r\nX-Content-Type-Options: nosniff")
+                : _webEnv!.CreateWebResourceResponse(null, 404, "Not Found", "");
+        }
+        catch
+        {
+            // 応答を作れなかったときは何も返さない(既定の処理に任せると、要求が外へ出ていく可能性がある)
+            try { e.Response = _webEnv!.CreateWebResourceResponse(null, 404, "Not Found", ""); } catch { }
+        }
+        finally
+        {
+            deferral.Complete();
+        }
     }
 
     // 外部URIを既定のブラウザ（既定アプリ）で開く
@@ -221,6 +359,18 @@ public sealed partial class MainWindow : Window
             Clipboard.SetContent(pkg);
             return;
         }
+        // 文書内の相対パスのリンク(template.html のクリック処理から)
+        if (msg != null && msg.StartsWith("link:"))
+        {
+            OpenDocumentLink(msg.Substring(5));
+            return;
+        }
+        // 文書内の http(s) のリンク(template.html のクリック処理から)。確認してから既定のブラウザで開く
+        if (msg != null && msg.StartsWith("external:"))
+        {
+            OpenExternalLink(msg.Substring(9));
+            return;
+        }
         switch (msg)
         {
             case "open": OnOpenClick(this, null!); break;
@@ -267,6 +417,7 @@ public sealed partial class MainWindow : Window
         ApplyZoom(_settings.ZoomFactor);
         StatusBar.Visibility = _settings.ShowStatusBar ? Visibility.Visible : Visibility.Collapsed;
         StatusBarItem.IsChecked = _settings.ShowStatusBar;
+        ConfirmExternalItem.IsChecked = _settings.ConfirmExternalOpen;
         SetTheme(_settings.Theme);   // テーマを適用する（永続化はしない）
     }
 
@@ -289,8 +440,8 @@ public sealed partial class MainWindow : Window
             var doc = FileService.Load(path);
             _currentPath = path;
 
-            var baseUri = new Uri(Path.GetDirectoryName(path)! + Path.DirectorySeparatorChar).AbsoluteUri;
-            var html = MarkdownRenderer.BuildHtml(doc.Text, _currentTheme, _template, baseUri);
+            // 相対パスの画像は http://document/ から読む(OnDocumentResourceRequested が文書フォルダの画像だけを返す)
+            var html = MarkdownRenderer.BuildHtml(doc.Text, _currentTheme, _template, DocumentImages.BaseUri);
             ContentView.CoreWebView2.NavigateToString(html);
             // ナビゲーションでCSS状態がリセットされるため、文字サイズを再適用する
             ApplyZoom(_zoomFactor);
@@ -533,7 +684,7 @@ public sealed partial class MainWindow : Window
             core.SetVirtualHostNameToFolderMapping(
                 "vendor", Path.Combine(AppContext.BaseDirectory, "Assets", "vendor"),
                 CoreWebView2HostResourceAccessKind.Allow);
-            OpenLinksExternally(core);
+            OpenLinksExternally(core, confirm: false);
             // 閲覧専用の小さな表示のため、右クリックメニューとブラウザ既定のショートカットは使わない（Ctrl+C は有効）
             core.Settings.AreDefaultContextMenusEnabled = false;
             core.Settings.AreBrowserAcceleratorKeysEnabled = false;

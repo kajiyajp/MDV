@@ -2,6 +2,13 @@
 <html class="{{THEME_CLASS}}">
 <head>
   <meta charset="utf-8">
+  <!-- 文書内のスクリプト・on属性・外部への通信・リモート画像を止める(「通信なし・データ収集なし」を守るため。#17)。
+       実行できるのは同梱ライブラリ(http://vendor)と、nonce を付けたこのテンプレートのインラインスクリプトだけ。
+       画像は同梱のもの・data: と、文書フォルダの画像(http://document。返す範囲は DocumentImages が決める)だけ。
+       nonce は表示のたびに MarkdownRenderer.BuildHtml が乱数で埋めるので、文書側からは真似できない。
+       本文より前に置く必要がある。文書が別の CSP を書いても、ポリシーは厳しくなる方向にしか働かない。
+       (このコメントにプレースホルダ名を書かないこと。Replace がすべての出現箇所を置換するため) -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src http://vendor 'nonce-{{NONCE}}'; style-src http://vendor 'unsafe-inline'; img-src http://vendor http://document data:; font-src http://vendor data:; connect-src 'none'">
   <base href="{{BASE_HREF}}">
   <!-- テーマ別CSS: クラスで出し分け -->
   <link rel="stylesheet" href="http://vendor/github-markdown-light.css" id="md-light">
@@ -46,7 +53,7 @@
   <script src="http://vendor/katex.min.js"></script>
   <script src="http://vendor/auto-render.min.js"></script>
   <script src="http://vendor/mermaid.min.js"></script>
-  <script>
+  <script nonce="{{NONCE}}">
     // テーマ別CSSの有効/無効を切替（disabled属性をJSで制御）
     function applyTheme() {
       var dark = document.documentElement.classList.contains('theme-dark') ||
@@ -168,6 +175,39 @@
         window.chrome.webview.postMessage(msg);
       }
     });
+    // 文書内のリンク(#17)。
+    //   #見出し      … このページの中でスクロールする
+    //   相対パス     … ホスト(C#)に知らせ、Markdown ファイルなら MDV で開く(postMessage 'link:'。書かれたままの href を渡す)
+    //   http(s)      … ページは移動させず、ホストに知らせる(postMessage 'external:')。ホストが確認してから既定のブラウザで開く。
+    //                  (移動を始めると、ホストの NavigationStarting で取り消しても WebView が先に 1 回要求を送ってしまうため。実測)
+    //   その他のスキーム … 従来どおり
+    window.__scrollToFragment = function (fragment) {
+      var id;
+      try { id = decodeURIComponent(fragment); } catch (e) { id = fragment; }
+      if (id === '' || id.toLowerCase() === 'top') { window.scrollTo(0, 0); return true; }
+      var el = document.getElementById(id) || document.getElementsByName(id)[0];
+      if (el) el.scrollIntoView();
+      return !!el;
+    };
+    function onLinkClick(ev) {
+      var a = ev.target && ev.target.closest && ev.target.closest('a[href], area[href]');
+      if (!a) return;
+      var href = (a.getAttribute('href') || '').trim();
+      var host = window.chrome && window.chrome.webview;
+      if (/^https?:/i.test(a.href) && !/^http:\/\/(document|vendor)\//i.test(a.href) &&
+          (/^[a-z][a-z0-9+.\-]*:/i.test(href) || href.indexOf('//') === 0)) {
+        ev.preventDefault();
+        if (host) host.postMessage('external:' + a.href);
+        return;
+      }
+      if (/^[a-z][a-z0-9+.\-]*:/i.test(href) || href.indexOf('//') === 0) return;
+      ev.preventDefault();
+      if (href.charAt(0) === '#') { window.__scrollToFragment(href.slice(1)); return; }
+      if (href !== '' && host) host.postMessage('link:' + href);
+    }
+    document.addEventListener('click', onLinkClick);
+    // 中クリック(新しいウィンドウで開く操作)も同じに扱う
+    document.addEventListener('auxclick', function (ev) { if (ev.button === 1) onLinkClick(ev); });
     // コードブロック右上に「コピー」ボタンを追加する（Mermaid図は除外）。
     // クリップボードは確実性のためホスト(C#)経由でコピーする（postMessage 'copy:'）。
     // ボタンの文言はホスト(C#)が表示言語の文字列(JS文字列リテラル)に置換する。

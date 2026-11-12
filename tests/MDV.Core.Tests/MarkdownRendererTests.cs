@@ -62,6 +62,65 @@ public class MarkdownRendererTests
         Assert.DoesNotContain("{{BASE_HREF}}", html);
     }
 
+    // CSP の nonce は表示のたびに変わり、ポリシーとスクリプトの両方に同じ値が入る
+    [Fact] public void BuildHtml_fills_a_new_nonce_each_time()
+    {
+        var template = "<meta content=\"script-src 'nonce-{{NONCE}}'\"><script nonce=\"{{NONCE}}\"></script>{{BODY}}";
+        string NonceOf(string html)
+        {
+            var policy = System.Text.RegularExpressions.Regex.Match(html, "'nonce-([^']+)'").Groups[1].Value;
+            var script = System.Text.RegularExpressions.Regex.Match(html, "<script nonce=\"([^\"]+)\"").Groups[1].Value;
+            Assert.Equal(policy, script);
+            return policy;
+        }
+        var a = NonceOf(MarkdownRenderer.BuildHtml("x", ThemeMode.Light, template, "file:///C:/docs/"));
+        var b = NonceOf(MarkdownRenderer.BuildHtml("x", ThemeMode.Light, template, "file:///C:/docs/"));
+        Assert.True(a.Length >= 16);
+        Assert.NotEqual(a, b);
+    }
+
+    // 文書に {{NONCE}} と書いても nonce の値に置き換わらない(文書のスクリプトが nonce を得られない)
+    [Fact] public void BuildHtml_does_not_put_the_nonce_into_the_document()
+    {
+        var template = "<script nonce=\"{{NONCE}}\"></script><body>{{BODY}}</body>";
+        var html = MarkdownRenderer.BuildHtml("<script nonce=\"{{NONCE}}\">x()</script>", ThemeMode.Light, template, "file:///C:/docs/");
+        Assert.Contains("<script nonce=\"{{NONCE}}\">x()</script>", html);
+        Assert.Single(System.Text.RegularExpressions.Regex.Matches(html, "\\{\\{NONCE\\}\\}"));
+    }
+
+    // 表示しただけで外へ通信してしまうタグ(meta refresh・link・iframe)は、文書の HTML から取り除く(#17)
+    [Theory]
+    [InlineData("<meta http-equiv=\"refresh\" content=\"0;url=http://x/\">")]
+    [InlineData("text <meta http-equiv=\"refresh\" content=\"0;url=http://x/\"> text")]
+    [InlineData("<META HTTP-EQUIV=refresh CONTENT=\"0;url=http://x/\">")]
+    [InlineData("<meta\nhttp-equiv=\"refresh\"\ncontent=\"0;url=http://x/\">")]
+    [InlineData("<meta/http-equiv=refresh content=0;url=http://x/>")]
+    [InlineData("<link rel=\"preconnect\" href=\"http://x/\">")]
+    [InlineData("<link rel=\"dns-prefetch\" href=\"http://x/\">")]
+    [InlineData("<iframe src=\"http://x/\"></iframe>")]
+    [InlineData("<iframe srcdoc=\"&lt;meta http-equiv='refresh' content='0;url=http://x/'&gt;\"></iframe>")]
+    [InlineData("<div>\n<meta http-equiv=\"refresh\" content=\"0;url=http://x/\">\n</div>")]
+    [InlineData("<meta a=\">\" http-equiv=\"refresh\" content=\"0;url=http://x/\">")]
+    // HTML ブロックの中は Markdig がそのまま出力する(壊れたタグも &lt; にならない)
+    [InlineData("<div>\n<me<meta>ta http-equiv=\"refresh\" content=\"0;url=http://x/\">\n</div>")]   // 取り除いた跡で新しいタグにならない
+    [InlineData("<div>\n<meta http-equiv=\"refresh\" content=\"0;url=http://x/\"")]                 // 閉じていない(後ろのテンプレートとつながる)
+    public void Tags_that_reach_out_are_removed(string markdown)
+    {
+        var html = MarkdownRenderer.RenderBody(markdown);
+        Assert.DoesNotMatch("(?i)<(meta|link|iframe)[\\s/>]|(?i)<(meta|link|iframe)$", html);
+    }
+
+    // 文字として書いたもの(コード・エスケープ)と、似た名前の別のタグはそのまま
+    [Theory]
+    [InlineData("`<meta http-equiv=\"refresh\">`", "&lt;meta http-equiv=&quot;refresh&quot;&gt;")]
+    [InlineData("```html\n<link rel=\"x\">\n```", "&lt;link rel=&quot;x&quot;&gt;")]
+    [InlineData("\\<meta>", "&lt;meta&gt;")]
+    [InlineData("<metadata>x</metadata>", "<metadata>")]
+    [InlineData("<linker>x</linker>", "<linker>")]
+    [InlineData("<a href=\"http://x/\">link</a>", "<a href=\"http://x/\">link</a>")]
+    public void Text_and_other_tags_are_kept(string markdown, string expected) =>
+        Assert.Contains(expected, MarkdownRenderer.RenderBody(markdown));
+
     // 見出しの ID は GitHub と同じ規則にする。期待値は GitHub の Markdown API(2026-10-25)の出力と照合したもの。
     // 既定(ASCII のみ)では日本語・韓国語などの見出しが "section" になり、目次のリンク(#見出し)が合わなかった
     [Theory]
