@@ -116,6 +116,10 @@ public sealed partial class MainWindow : Window
         ContentView.CoreWebView2.SetVirtualHostNameToFolderMapping(
             "vendor", Path.Combine(assetsDir, "vendor"),
             CoreWebView2HostResourceAccessKind.Allow);
+        // http://document/... は文書のフォルダとその下にある画像だけを返す(DocumentImages。#17)。
+        // フォルダのマッピングは使わない(画像以外のファイルも読めるようになるため)
+        ContentView.CoreWebView2.AddWebResourceRequestedFilter(DocumentImages.BaseUri + "*", CoreWebView2WebResourceContext.All);
+        ContentView.CoreWebView2.WebResourceRequested += OnDocumentResourceRequested;
 
         _template = LocalizeTemplate(File.ReadAllText(Path.Combine(assetsDir, "template.html")));
 
@@ -151,7 +155,7 @@ public sealed partial class MainWindow : Window
         core.NewWindowRequested += (s, e) =>
         {
             e.Handled = true;
-            LaunchExternal(e.Uri);
+            if (!DocumentImages.IsDocumentUri(e.Uri)) LaunchExternal(e.Uri);
         };
         core.NavigationStarting += (s, e) =>
         {
@@ -160,9 +164,37 @@ public sealed partial class MainWindow : Window
                 uri.Host != "vendor")            // 同梱資産(http://vendor/...)の取得は遮らない
             {
                 e.Cancel = true;
-                LaunchExternal(e.Uri);
+                // 文書の相対リンク(http://document/...)はブラウザに渡さず、ページも移動しない。
+                // (画像を直接ページとして開くと SVG のスクリプトが動きうるため。文書内リンクへの対応は別に行う)
+                if (!DocumentImages.IsDocumentUri(e.Uri)) LaunchExternal(e.Uri);
             }
         };
+    }
+
+    // http://document/... の要求に、文書フォルダの画像だけを返す。それ以外は 404(中身なし)
+    private async void OnDocumentResourceRequested(CoreWebView2 sender, CoreWebView2WebResourceRequestedEventArgs e)
+    {
+        var deferral = e.GetDeferral();
+        try
+        {
+            var uri = e.Request.Uri;
+            var folder = _currentPath != null ? Path.GetDirectoryName(_currentPath) : null;
+            // 大きな画像でも画面を止めないよう、読み込みはバックグラウンドで行う
+            var image = folder != null ? await Task.Run(() => DocumentImages.Read(folder, uri)) : null;
+            e.Response = image is { } found
+                ? _webEnv!.CreateWebResourceResponse(new MemoryStream(found.Data).AsRandomAccessStream(), 200, "OK",
+                    $"Content-Type: {found.ContentType}\r\nX-Content-Type-Options: nosniff")
+                : _webEnv!.CreateWebResourceResponse(null, 404, "Not Found", "");
+        }
+        catch
+        {
+            // 応答を作れなかったときは何も返さない(既定の処理に任せると、要求が外へ出ていく可能性がある)
+            try { e.Response = _webEnv!.CreateWebResourceResponse(null, 404, "Not Found", ""); } catch { }
+        }
+        finally
+        {
+            deferral.Complete();
+        }
     }
 
     // 外部URIを既定のブラウザ（既定アプリ）で開く
@@ -289,8 +321,8 @@ public sealed partial class MainWindow : Window
             var doc = FileService.Load(path);
             _currentPath = path;
 
-            var baseUri = new Uri(Path.GetDirectoryName(path)! + Path.DirectorySeparatorChar).AbsoluteUri;
-            var html = MarkdownRenderer.BuildHtml(doc.Text, _currentTheme, _template, baseUri);
+            // 相対パスの画像は http://document/ から読む(OnDocumentResourceRequested が文書フォルダの画像だけを返す)
+            var html = MarkdownRenderer.BuildHtml(doc.Text, _currentTheme, _template, DocumentImages.BaseUri);
             ContentView.CoreWebView2.NavigateToString(html);
             // ナビゲーションでCSS状態がリセットされるため、文字サイズを再適用する
             ApplyZoom(_zoomFactor);

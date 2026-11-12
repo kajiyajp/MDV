@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Markdig;
 using Markdig.Extensions.AutoIdentifiers;
 using MDV.Core.Models;
@@ -32,7 +33,11 @@ public static class MarkdownRenderer
             ThemeMode.Dark => "theme-dark",
             _ => "theme-system"
         };
+        // CSP の nonce(template.html)。表示のたびに作り直し、文書が値を知ることができないようにする。
+        // 本文の {{NONCE}} が置換されないよう、本文を埋め込む前(最初)に置換する
+        var nonce = Convert.ToBase64String(RandomNumberGenerator.GetBytes(16));
         return template
+            .Replace("{{NONCE}}", nonce)
             .Replace("{{THEME_CLASS}}", themeClass)
             .Replace("{{BASE_HREF}}", baseDirUri)
             .Replace("{{BODY}}", RenderBody(markdown));
