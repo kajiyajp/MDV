@@ -2,6 +2,12 @@
 <html class="{{THEME_CLASS}}">
 <head>
   <meta charset="utf-8">
+  <!-- 文書内のスクリプト・on属性・外部への通信・リモート画像を止める(「通信なし・データ収集なし」を守るため。#17)。
+       実行できるのは同梱ライブラリ(http://vendor)と、nonce を付けたこのテンプレートのインラインスクリプトだけ。
+       nonce は表示のたびに MarkdownRenderer.BuildHtml が乱数で埋めるので、文書側からは真似できない。
+       本文より前に置く必要がある。文書が別の CSP を書いても、ポリシーは厳しくなる方向にしか働かない。
+       (このコメントにプレースホルダ名を書かないこと。Replace がすべての出現箇所を置換するため) -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src http://vendor 'nonce-{{NONCE}}'; style-src http://vendor 'unsafe-inline'; img-src http://vendor data:; font-src http://vendor data:; connect-src 'none'">
   <base href="{{BASE_HREF}}">
   <!-- テーマ別CSS: クラスで出し分け -->
   <link rel="stylesheet" href="http://vendor/github-markdown-light.css" id="md-light">
@@ -46,7 +52,7 @@
   <script src="http://vendor/katex.min.js"></script>
   <script src="http://vendor/auto-render.min.js"></script>
   <script src="http://vendor/mermaid.min.js"></script>
-  <script>
+  <script nonce="{{NONCE}}">
     // テーマ別CSSの有効/無効を切替（disabled属性をJSで制御）
     function applyTheme() {
       var dark = document.documentElement.classList.contains('theme-dark') ||
