@@ -62,6 +62,32 @@ public class MarkdownRendererTests
         Assert.DoesNotContain("{{BASE_HREF}}", html);
     }
 
+    // CSP の nonce は表示のたびに変わり、ポリシーとスクリプトの両方に同じ値が入る
+    [Fact] public void BuildHtml_fills_a_new_nonce_each_time()
+    {
+        var template = "<meta content=\"script-src 'nonce-{{NONCE}}'\"><script nonce=\"{{NONCE}}\"></script>{{BODY}}";
+        string NonceOf(string html)
+        {
+            var policy = System.Text.RegularExpressions.Regex.Match(html, "'nonce-([^']+)'").Groups[1].Value;
+            var script = System.Text.RegularExpressions.Regex.Match(html, "<script nonce=\"([^\"]+)\"").Groups[1].Value;
+            Assert.Equal(policy, script);
+            return policy;
+        }
+        var a = NonceOf(MarkdownRenderer.BuildHtml("x", ThemeMode.Light, template, "file:///C:/docs/"));
+        var b = NonceOf(MarkdownRenderer.BuildHtml("x", ThemeMode.Light, template, "file:///C:/docs/"));
+        Assert.True(a.Length >= 16);
+        Assert.NotEqual(a, b);
+    }
+
+    // 文書に {{NONCE}} と書いても nonce の値に置き換わらない(文書のスクリプトが nonce を得られない)
+    [Fact] public void BuildHtml_does_not_put_the_nonce_into_the_document()
+    {
+        var template = "<script nonce=\"{{NONCE}}\"></script><body>{{BODY}}</body>";
+        var html = MarkdownRenderer.BuildHtml("<script nonce=\"{{NONCE}}\">x()</script>", ThemeMode.Light, template, "file:///C:/docs/");
+        Assert.Contains("<script nonce=\"{{NONCE}}\">x()</script>", html);
+        Assert.Single(System.Text.RegularExpressions.Regex.Matches(html, "\\{\\{NONCE\\}\\}"));
+    }
+
     // 見出しの ID は GitHub と同じ規則にする。期待値は GitHub の Markdown API(2026-10-25)の出力と照合したもの。
     // 既定(ASCII のみ)では日本語・韓国語などの見出しが "section" になり、目次のリンク(#見出し)が合わなかった
     [Theory]
