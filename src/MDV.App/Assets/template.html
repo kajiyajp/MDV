@@ -158,6 +158,9 @@
     window.__setZoom = function (factor) {
       document.body.style.zoom = factor;
     };
+    // 文書内のフォームは送信しない。action のないフォームの送信先は about:blank になり、
+    // CSP の form-action では止まらず本文が空のページに置き換わるため(form-action は外への送信を止める二重の備え)
+    document.addEventListener('submit', function (ev) { ev.preventDefault(); }, true);
     // WebView2にフォーカスがある間もアプリのメニューショートカットを効かせるため、
     // 該当キーを捕捉してホスト(C#)へ通知する（ホスト側で対応するメニュー動作を実行）。
     document.addEventListener('keydown', function (ev) {
