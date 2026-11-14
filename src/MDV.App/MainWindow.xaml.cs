@@ -170,6 +170,13 @@ public sealed partial class MainWindow : Window
         };
         core.NavigationStarting += (s, e) =>
         {
+            // 「戻る」「進む」(マウスのボタンなど)による移動は取り消す。MDV には履歴の機能がなく、戻ると
+            // 表示中のページと、ホスト側の文書(_currentPath:タイトルやリンクの基準フォルダ)がずれるため
+            if (e.NavigationKind == CoreWebView2NavigationKind.BackOrForward)
+            {
+                e.Cancel = true;
+                return;
+            }
             if (Uri.TryCreate(e.Uri, UriKind.Absolute, out var uri) &&
                 (uri.Scheme == "http" || uri.Scheme == "https") &&
                 uri.Host != "vendor")            // 同梱資産(http://vendor/...)の取得は遮らない
