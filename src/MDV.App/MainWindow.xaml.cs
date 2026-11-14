@@ -120,6 +120,9 @@ public sealed partial class MainWindow : Window
         // http://document/... は文書のフォルダとその下にある画像だけを返す(DocumentImages。#17)。
         // フォルダのマッピングは使わない(画像以外のファイルも読めるようになるため)
         ContentView.CoreWebView2.AddWebResourceRequestedFilter(DocumentImages.BaseUri + "*", CoreWebView2WebResourceContext.All);
+        // CSP の http://document は https://document も許すので、こちらも受けて 404 を返す(受けないとホスト名の名前解決が外へ出る)。
+        // https://vendor はフォルダのマッピングが受けるので外へは出ない
+        ContentView.CoreWebView2.AddWebResourceRequestedFilter("https://" + DocumentImages.Host + "/*", CoreWebView2WebResourceContext.All);
         ContentView.CoreWebView2.WebResourceRequested += OnDocumentResourceRequested;
         // リンク先の文書を開いたあと、指定の見出しまでスクロールする
         ContentView.CoreWebView2.NavigationCompleted += OnContentNavigationCompleted;
