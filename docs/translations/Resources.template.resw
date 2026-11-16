@@ -217,4 +217,33 @@
     <value>Spanish translation</value>
     <comment>About dialog: what the contributor "Alexis Gross" did. | ja: スペイン語翻訳</comment>
   </data>
+
+  <data name="MenuConfirmExternal.Text" xml:space="preserve">
+    <value>Confirm before opening external documents and links</value>
+    <comment>View menu: item with a check mark. When on, MDV asks before opening a web link in the browser or a Markdown file outside the current document's folder. | ja: 外部の文書・リンクを開く前に確認する</comment>
+  </data>
+  <data name="ExternalOpenTitle" xml:space="preserve">
+    <value>Opening an external document or link</value>
+    <comment>Title of the confirmation dialog shown before opening a web link in the browser or a Markdown file outside the current document's folder. | ja: 外部の文書またはリンクを開きます</comment>
+  </data>
+  <data name="ExternalOpenTarget" xml:space="preserve">
+    <value>Target:</value>
+    <comment>Confirmation dialog: label above the link address or file path that will be opened. | ja: 開く先：</comment>
+  </data>
+  <data name="ExternalOpenDontAsk" xml:space="preserve">
+    <value>Don't warn me again</value>
+    <comment>Confirmation dialog: check box. If checked when the user clicks Open, the dialog is not shown again (it turns off the View menu item). | ja: 今後は確認しない</comment>
+  </data>
+  <data name="ExternalOpenSettingHint" xml:space="preserve">
+    <value>You can turn this back on from the View menu.</value>
+    <comment>Confirmation dialog: small note under the check box. | ja: ［表示］メニューからいつでも元に戻せます。</comment>
+  </data>
+  <data name="ExternalOpenOpen" xml:space="preserve">
+    <value>Open</value>
+    <comment>Confirmation dialog: button that opens the link or file. | ja: 開く</comment>
+  </data>
+  <data name="ExternalOpenCancel" xml:space="preserve">
+    <value>Cancel</value>
+    <comment>Confirmation dialog: button that closes the dialog without opening anything. | ja: キャンセル</comment>
+  </data>
 </root>

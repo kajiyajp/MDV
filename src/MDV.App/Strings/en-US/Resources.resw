@@ -165,4 +165,26 @@
   <data name="AboutCreditTranslationEs" xml:space="preserve">
     <value>Spanish translation</value>
   </data>
+
+  <data name="MenuConfirmExternal.Text" xml:space="preserve">
+    <value>Confirm before opening external documents and links</value>
+  </data>
+  <data name="ExternalOpenTitle" xml:space="preserve">
+    <value>Opening an external document or link</value>
+  </data>
+  <data name="ExternalOpenTarget" xml:space="preserve">
+    <value>Target:</value>
+  </data>
+  <data name="ExternalOpenDontAsk" xml:space="preserve">
+    <value>Don't warn me again</value>
+  </data>
+  <data name="ExternalOpenSettingHint" xml:space="preserve">
+    <value>You can turn this back on from the View menu.</value>
+  </data>
+  <data name="ExternalOpenOpen" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="ExternalOpenCancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
 </root>

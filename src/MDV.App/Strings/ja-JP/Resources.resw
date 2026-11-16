@@ -179,4 +179,26 @@
   <data name="AboutCreditTranslationEs" xml:space="preserve">
     <value>スペイン語翻訳</value>
   </data>
+
+  <data name="MenuConfirmExternal.Text" xml:space="preserve">
+    <value>外部の文書・リンクを開く前に確認する</value>
+  </data>
+  <data name="ExternalOpenTitle" xml:space="preserve">
+    <value>外部の文書またはリンクを開きます</value>
+  </data>
+  <data name="ExternalOpenTarget" xml:space="preserve">
+    <value>開く先：</value>
+  </data>
+  <data name="ExternalOpenDontAsk" xml:space="preserve">
+    <value>今後は確認しない</value>
+  </data>
+  <data name="ExternalOpenSettingHint" xml:space="preserve">
+    <value>［表示］メニューからいつでも元に戻せます。</value>
+  </data>
+  <data name="ExternalOpenOpen" xml:space="preserve">
+    <value>開く</value>
+  </data>
+  <data name="ExternalOpenCancel" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
 </root>
