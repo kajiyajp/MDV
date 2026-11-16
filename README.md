@@ -34,8 +34,12 @@ Microsoft Store への一本化に伴い、今後の新規配布は Store が中
 - 表（テーブル）
 - コードブロックのシンタックスハイライト
 - タスクリスト（チェックボックス）
-- 画像表示
-- リンク（外部リンクは既定のブラウザで開く）
+- 画像表示（文書と同じフォルダとその下のフォルダにある画像。[ローカル画像の使い方](#ローカル画像の使い方--using-local-images)を参照）
+- リンク
+  - ページ内の見出しへのリンク（`#見出し`）
+  - 他の Markdown ファイルへのリンク（`other.md`、`other.md#見出し`）は MDV で開く
+  - Web のリンクは既定のブラウザで開く。文書のフォルダの外の文書や Web のリンクは、開く前に開く先を表示して確認する（[表示]メニューで切り替え）
+- 文書内のスクリプトの実行や、文書からの外部への通信は行わない
 - LaTeX 数式（KaTeX によるレンダリング）
 - Mermaid 図
 - テーマ切替（ライト / ダーク / システム連動）
@@ -135,11 +139,28 @@ Windows 11 のみ
 2. テーマを動的に切り替えても、すでにレンダリング済みの Mermaid 図は再テーマされません（反映するには再読み込みが必要です）。
 3. 文字サイズの拡大・縮小は WebView2 の CSS zoom によって実装しています（WinUI 3 の WebView2 はネイティブの `ZoomFactor` が公開されていないため）。
 4. 表示言語の変更は、アプリの再起動後に反映されます。
-5. 文書からの相対パスで指定したローカル画像は表示されず、ページ内リンクや他の Markdown ファイルへのリンクはクリックしても動作しません（[Issue #17](https://github.com/kajiyajp/MDV/issues/17)）。
+
+## ローカル画像の使い方 / Using local images
+
+MDV は、文書と同じフォルダとその下のフォルダにある画像を表示します。画像は文書からの**相対パス**で書いてください。
+
+```markdown
+![手順 1 の画面](images/step1.png)
+```
+
+- 対応する画像: `.png` `.jpg` `.jpeg` `.gif` `.webp` `.bmp` `.svg` `.ico`
+- 表示されないもの: 文書のフォルダの外の画像（`../` で始まるパスなど）、絶対パス（`C:\...`）、Web 上の画像（`https://...`）
+- AI に手順書などを書かせるときは、「画像は `images/` フォルダに置き、Markdown からは `images/ファイル名` の相対パスで参照して」と伝えると、MDV でそのまま表示できます。
+
+MDV shows images in the document's folder and its subfolders. Write the image path relative to the document, as in the example above.
+
+- Supported images: `.png` `.jpg` `.jpeg` `.gif` `.webp` `.bmp` `.svg` `.ico`
+- Not shown: images outside the document's folder (such as paths starting with `../`), absolute paths (`C:\...`) and images on the web (`https://...`)
+- When you ask an AI to write a document such as a how-to guide, ask it to "put images in an `images/` folder and refer to them with relative paths like `images/file-name`". MDV then shows them as they are.
 
 ## サンプル文書
 
-`docs/sample.md` に、表・コード・タスクリスト・数式・Mermaid 図・外部リンクを網羅した検証用サンプルがあります。
+`docs/sample.md` に、表・コード・タスクリスト・数式・Mermaid 図・画像・文書内のリンク・外部リンクを網羅した検証用サンプルがあります。
 
 ## 開発・翻訳への協力
 
@@ -151,7 +172,7 @@ Issue やプルリクエストを送る前に、MDV の方針と手順をまと�
 
 MDV の開発・翻訳に協力してくださった方々です。ありがとうございます。
 
-- [Coldlapse](https://github.com/Coldlapse) — 英語・韓国語翻訳、文字コード対応などの修正
+- [Coldlapse](https://github.com/Coldlapse) — 英語・韓国語翻訳、多言語対応、文書内の画像とリンク、セキュリティの強化など
 - [Alexis Gross](https://github.com/AlexisGross) — スペイン語翻訳
 
 ## ライセンス

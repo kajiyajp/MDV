@@ -249,8 +249,8 @@
   <data name="AboutContributors" xml:space="preserve">
     <value>Colaboradores</value>
   </data>
-  <data name="AboutCreditTranslationEnKo" xml:space="preserve">
-    <value>Traducción al inglés y al coreano</value>
+  <data name="AboutCreditColdlapse" xml:space="preserve">
+    <value>Traducción al inglés y al coreano, interfaz multilingüe, imágenes y enlaces en documentos, refuerzo de seguridad y más</value>
   </data>
   <data name="AboutCreditTranslationEs" xml:space="preserve">
     <value>Traducción al español</value>

@@ -209,9 +209,9 @@
     <value>Contributors</value>
     <comment>About dialog: small label at the bottom, before the list of contributors. | ja: コントリビューター</comment>
   </data>
-  <data name="AboutCreditTranslationEnKo" xml:space="preserve">
-    <value>English and Korean translation</value>
-    <comment>About dialog: what the contributor "Coldlapse" did. | ja: 英語・韓国語翻訳</comment>
+  <data name="AboutCreditColdlapse" xml:space="preserve">
+    <value>English and Korean translation, multilingual UI, images and links in documents, security hardening, and more</value>
+    <comment>About dialog: what the contributor "Coldlapse" did. | ja: 英語・韓国語翻訳、多言語対応、文書内の画像とリンク、セキュリティの強化など</comment>
   </data>
   <data name="AboutCreditTranslationEs" xml:space="preserve">
     <value>Spanish translation</value>
