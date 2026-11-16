@@ -46,7 +46,7 @@ public class TemplateCspTests
         Assert.Equal("connect-src 'none'", Directive("connect-src"));
         Assert.Equal("form-action 'none'", Directive("form-action"));
         Assert.Equal("script-src http://vendor 'nonce-{{NONCE}}'", Directive("script-src"));
-        Assert.Equal("img-src http://vendor data:", Directive("img-src"));
+        Assert.Equal("img-src http://vendor http://document data:", Directive("img-src"));
         Assert.DoesNotContain("unsafe-eval", Policy());
     }
 
