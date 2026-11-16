@@ -2,7 +2,7 @@
 
 > 作成日: 2026-07-01
 > 目的: Task 9（ファイルを開いて描画する中核フロー）の手動検証用。
-> 表・コードブロック・タスクリスト・インライン数式・Mermaid図・外部リンクを含む。
+> 表・コードブロック・タスクリスト・インライン数式・Mermaid図・画像・文書内のリンク・外部リンクを含む。
 
 ## 表
 
@@ -46,3 +46,15 @@ graph TD
 ## 外部リンク
 
 詳細は [Markdig](https://github.com/xoofx/markdig) のドキュメントを参照。
+
+## 画像
+
+文書と同じフォルダとその下のフォルダにある画像は、相対パスで表示できる（`images/sample.png`）。
+
+![MDV のロゴ](images/sample.png)
+
+## 文書内のリンク
+
+- [このページの「表」へ](#表)
+- [翻訳の手順書を開く](translations/README.md)
+- [翻訳の手順書の「Adding a language」へ](translations/README.md#adding-a-language)

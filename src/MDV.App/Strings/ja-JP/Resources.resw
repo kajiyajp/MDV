@@ -173,8 +173,8 @@
   <data name="AboutContributors" xml:space="preserve">
     <value>コントリビューター</value>
   </data>
-  <data name="AboutCreditTranslationEnKo" xml:space="preserve">
-    <value>英語・韓国語翻訳</value>
+  <data name="AboutCreditColdlapse" xml:space="preserve">
+    <value>英語・韓国語翻訳、多言語対応、文書内の画像とリンク、セキュリティの強化など</value>
   </data>
   <data name="AboutCreditTranslationEs" xml:space="preserve">
     <value>スペイン語翻訳</value>

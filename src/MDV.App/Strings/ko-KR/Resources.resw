@@ -159,8 +159,8 @@
   <data name="AboutContributors" xml:space="preserve">
     <value>기여자</value>
   </data>
-  <data name="AboutCreditTranslationEnKo" xml:space="preserve">
-    <value>영어·한국어 번역</value>
+  <data name="AboutCreditColdlapse" xml:space="preserve">
+    <value>영어·한국어 번역, 다국어 UI, 문서 내 이미지와 링크, 보안 강화 등</value>
   </data>
   <data name="AboutCreditTranslationEs" xml:space="preserve">
     <value>스페인어 번역</value>

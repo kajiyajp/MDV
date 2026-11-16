@@ -548,6 +548,8 @@ public sealed partial class MainWindow : Window
             // ダイアログをウィンドウの現在テーマに合わせる（ライト/ダーク両対応）
             RequestedTheme = (this.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default
         };
+        // 既定の最大幅(548px)では協力者欄やライセンス表が窮屈なので、少し広げる
+        dialog.Resources["ContentDialogMaxWidth"] = 580.0;
         await dialog.ShowAsync();
     }
 
@@ -581,7 +583,8 @@ public sealed partial class MainWindow : Window
             notices = null;
         }
 
-        var panel = new StackPanel { Spacing = 6 };
+        // 右に余白を取り、ダイアログ全体の縦スクロールバーが文字やライセンス表に重ならないようにする
+        var panel = new StackPanel { Spacing = 6, Margin = new Thickness(0, 0, 16, 0) };
 
         panel.Children.Add(new TextBlock
         {
@@ -655,30 +658,35 @@ public sealed partial class MainWindow : Window
         // コントリビューター（最下部に小さく表示）。名前・リンクは本人の了承を得たものだけを載せる
         (string Name, string Url, string RoleKey)[] contributors =
         [
-            ("Coldlapse", "https://github.com/Coldlapse", "AboutCreditTranslationEnKo"),
+            ("Coldlapse", "https://github.com/Coldlapse", "AboutCreditColdlapse"),
             ("Alexis Gross", "https://github.com/AlexisGross", "AboutCreditTranslationEs"),
         ];
         var credit = new StackPanel { Spacing = 2, Margin = new Thickness(0, 6, 0, 0), Opacity = 0.75 };
         credit.Children.Add(new TextBlock { Text = Localizer.Get("AboutContributors") + ":", FontSize = 12 });
         foreach (var (name, url, roleKey) in contributors)
         {
-            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Margin = new Thickness(12, 0, 0, 0) };
-            var link = new HyperlinkButton { Content = name, FontSize = 12, Padding = new Thickness(0), VerticalAlignment = VerticalAlignment.Center };
+            // 名前(リンク)と役割の2列。役割の文が長くてもダイアログの幅で折り返すよう、2列目は残りの幅を使う
+            var row = new Grid { ColumnSpacing = 4, Margin = new Thickness(12, 0, 0, 0) };
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            var link = new HyperlinkButton { Content = name, FontSize = 12, Padding = new Thickness(0), VerticalAlignment = VerticalAlignment.Top };
             link.Click += (s, e) => LaunchExternal(url);
             row.Children.Add(link);
-            row.Children.Add(new TextBlock { Text = "— " + Localizer.Get(roleKey), FontSize = 12, VerticalAlignment = VerticalAlignment.Center });
+            var role = new TextBlock { Text = "— " + Localizer.Get(roleKey), FontSize = 12, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Top };
+            Grid.SetColumn(role, 1);
+            row.Children.Add(role);
             credit.Children.Add(row);
         }
         panel.Children.Add(credit);
 
-        // ダイアログ全体を縦スクロール可能にし、画面が小さくても内容が溢れず
-        // 「閉じる」ボタンが隠れないようにする（高さ・幅を上限で制約）。
+        // ウィンドウが小さいときだけダイアログ全体を縦スクロールし、内容が溢れても「閉じる」ボタンが隠れないようにする。
+        // 高さの上限はダイアログ(ウィンドウの大きさ)に任せる。固定の上限を置くと、ウィンドウが十分大きくても
+        // ライセンス表のスクロールと二重になるため
         return new ScrollViewer
         {
             Content = panel,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
-            MaxHeight = 460,
             MaxWidth = 560
         };
     }

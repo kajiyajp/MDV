@@ -159,8 +159,8 @@
   <data name="AboutContributors" xml:space="preserve">
     <value>Contributors</value>
   </data>
-  <data name="AboutCreditTranslationEnKo" xml:space="preserve">
-    <value>English and Korean translation</value>
+  <data name="AboutCreditColdlapse" xml:space="preserve">
+    <value>English and Korean translation, multilingual UI, images and links in documents, security hardening, and more</value>
   </data>
   <data name="AboutCreditTranslationEs" xml:space="preserve">
     <value>Spanish translation</value>
