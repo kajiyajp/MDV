@@ -45,6 +45,12 @@
                     </MenuFlyoutItem>
                 </MenuBarItem>
                 <MenuBarItem x:Uid="MenuView">
+                    <MenuFlyoutItem x:Uid="MenuFind" Click="OnFindClick">
+                        <MenuFlyoutItem.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="F" Modifiers="Control"/>
+                        </MenuFlyoutItem.KeyboardAccelerators>
+                    </MenuFlyoutItem>
+                    <MenuFlyoutSeparator/>
                     <!-- 選択中のテーマに印を付ける(MainWindow.SetTheme で同期) -->
                     <MenuFlyoutSubItem x:Uid="MenuTheme">
                         <RadioMenuFlyoutItem x:Name="ThemeLightItem" x:Uid="MenuThemeLight" GroupName="Theme" Click="OnThemeLight"/>
@@ -85,6 +91,42 @@
 
         <!-- 本文 -->
         <WebView2 x:Name="ContentView" Grid.Row="2"/>
+
+        <!-- ページ内検索(#2)の欄(表示 > 検索 / Ctrl+F で表示)。本文の右上に重ねる。
+             文字列(案内文・ボタンの説明)はコードで表示言語に合わせる(MainWindow.LocalizeFindPanel) -->
+        <Border x:Name="FindPanel" Grid.Row="2" Visibility="Collapsed"
+                HorizontalAlignment="Right" VerticalAlignment="Top" Margin="8,8,24,8" Padding="6,4"
+                CornerRadius="6" BorderThickness="1"
+                Background="{ThemeResource SolidBackgroundFillColorTertiaryBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
+            <Grid ColumnSpacing="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <!-- 幅は本文の幅に合わせてコードで変える(MainWindow のコンストラクタ) -->
+                <TextBox x:Name="FindBox" Grid.Column="0" Width="240" MinWidth="60"
+                         TextChanged="OnFindTextChanged" KeyDown="OnFindKeyDown"/>
+                <TextBlock x:Name="FindCount" Grid.Column="1" MinWidth="44" Margin="6,0"
+                           VerticalAlignment="Center" TextAlignment="Center"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                <Button x:Name="FindPrevButton" Grid.Column="2" Click="OnFindPrevClick"
+                        Background="Transparent" BorderThickness="0" Padding="8,6">
+                    <FontIcon Glyph="&#xE70E;" FontSize="12"/>
+                </Button>
+                <Button x:Name="FindNextButton" Grid.Column="3" Click="OnFindNextClick"
+                        Background="Transparent" BorderThickness="0" Padding="8,6">
+                    <FontIcon Glyph="&#xE70D;" FontSize="12"/>
+                </Button>
+                <Button x:Name="FindCloseButton" Grid.Column="4" Click="OnFindCloseClick"
+                        Background="Transparent" BorderThickness="0" Padding="8,6">
+                    <FontIcon Glyph="&#xE711;" FontSize="12"/>
+                </Button>
+            </Grid>
+        </Border>
 
         <!-- ステータスバー(背景はウィンドウと同じ文書の背景色。本文との境目は細い区切り線のみ) -->
         <Grid x:Name="StatusBar" Grid.Row="3" Padding="8,2" BorderThickness="0,1,0,0" BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}">

@@ -111,6 +111,21 @@
   <data name="CopyButton" xml:space="preserve">
     <value>コピー</value>
   </data>
+  <data name="FindPlaceholder" xml:space="preserve">
+    <value>文書内を検索</value>
+  </data>
+  <data name="MenuFind.Text" xml:space="preserve">
+    <value>検索...</value>
+  </data>
+  <data name="FindPrevious" xml:space="preserve">
+    <value>前を検索 (Shift+Enter)</value>
+  </data>
+  <data name="FindNext" xml:space="preserve">
+    <value>次を検索 (Enter)</value>
+  </data>
+  <data name="FindClose" xml:space="preserve">
+    <value>閉じる (Esc)</value>
+  </data>
   <data name="CopyButtonDone" xml:space="preserve">
     <value>コピーしました</value>
   </data>

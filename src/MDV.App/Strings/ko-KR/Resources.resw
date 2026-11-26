@@ -103,6 +103,21 @@
   <data name="CopyButton" xml:space="preserve">
     <value>복사</value>
   </data>
+  <data name="FindPlaceholder" xml:space="preserve">
+    <value>문서에서 찾기</value>
+  </data>
+  <data name="MenuFind.Text" xml:space="preserve">
+    <value>찾기...</value>
+  </data>
+  <data name="FindPrevious" xml:space="preserve">
+    <value>이전 찾기 (Shift+Enter)</value>
+  </data>
+  <data name="FindNext" xml:space="preserve">
+    <value>다음 찾기 (Enter)</value>
+  </data>
+  <data name="FindClose" xml:space="preserve">
+    <value>닫기 (Esc)</value>
+  </data>
   <data name="CopyButtonDone" xml:space="preserve">
     <value>복사했습니다</value>
   </data>
