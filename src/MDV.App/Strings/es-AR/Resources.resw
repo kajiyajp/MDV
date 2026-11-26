@@ -198,6 +198,21 @@
   <data name="CopyButton" xml:space="preserve">
     <value>Copiar</value>
   </data>
+  <data name="FindPlaceholder" xml:space="preserve">
+    <value>Buscar en el documento</value>
+  </data>
+  <data name="MenuFind.Text" xml:space="preserve">
+    <value>Buscar...</value>
+  </data>
+  <data name="FindPrevious" xml:space="preserve">
+    <value>Anterior (Shift+Enter)</value>
+  </data>
+  <data name="FindNext" xml:space="preserve">
+    <value>Siguiente (Enter)</value>
+  </data>
+  <data name="FindClose" xml:space="preserve">
+    <value>Cerrar (Esc)</value>
+  </data>
   <data name="CopyButtonDone" xml:space="preserve">
     <value>Copiado</value>
   </data>

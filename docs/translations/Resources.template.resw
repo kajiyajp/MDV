@@ -136,6 +136,26 @@
     <value>Copy</value>
     <comment>Small button on the top-right of a code block (shown on hover). Keep it short. | ja: コピー</comment>
   </data>
+  <data name="FindPlaceholder" xml:space="preserve">
+    <value>Find in document</value>
+    <comment>Placeholder in the find box (Ctrl+F). | ja: 文書内を検索</comment>
+  </data>
+  <data name="MenuFind.Text" xml:space="preserve">
+    <value>Find...</value>
+    <comment>View menu item that opens the find box. Shortcut Ctrl+F is shown by the app. | ja: 検索...</comment>
+  </data>
+  <data name="FindPrevious" xml:space="preserve">
+    <value>Previous match (Shift+Enter)</value>
+    <comment>Tooltip of the previous-match button in the find box. | ja: 前を検索 (Shift+Enter)</comment>
+  </data>
+  <data name="FindNext" xml:space="preserve">
+    <value>Next match (Enter)</value>
+    <comment>Tooltip of the next-match button in the find box. | ja: 次を検索 (Enter)</comment>
+  </data>
+  <data name="FindClose" xml:space="preserve">
+    <value>Close (Esc)</value>
+    <comment>Tooltip of the close button in the find box. | ja: 閉じる (Esc)</comment>
+  </data>
   <data name="CopyButtonDone" xml:space="preserve">
     <value>Copied</value>
     <comment>Shown on the same button for about one second after copying. Keep it short. | ja: コピーしました</comment>

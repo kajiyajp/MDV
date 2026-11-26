@@ -48,6 +48,17 @@ public sealed partial class MainWindow : Window
         ApplyWindowBackground();
         UpdateThemeToggleIcon();
         AddZoomAccelerators();
+        // ページ内検索(#2)。Ctrl+F は「表示 > 検索」のショートカット(WebView2 内は template.html の keydown が通知する)
+        LocalizeFindPanel();
+        // ウィンドウを狭めても検索欄がはみ出さないよう、入力欄の幅を本文の幅に合わせて縮める
+        ContentView.SizeChanged += (s, e) => FindBox.Width = Math.Clamp(e.NewSize.Width - 200, 160, 240);
+        // ウィンドウの最小幅。これより狭いと検索欄(入力欄 160 + 件数・ボタン)が収まらない。
+        // 最小幅は物理ピクセルで指定するため、表示倍率(125%・150% 等)を掛ける。画面をまたいで倍率が変わったら付け直す
+        RootGrid.Loaded += (s, e) =>
+        {
+            ApplyMinimumWidth();
+            RootGrid.XamlRoot.Changed += (r, a) => ApplyMinimumWidth();
+        };
 
         this.Closed += (s, e) => PersistSettings();
     }
@@ -390,7 +401,189 @@ public sealed partial class MainWindow : Window
             case "zoomReset": OnZoomReset(this, null!); break;
             case "reload": OnReload(this, null!); break;
             case "about": OnAboutClick(this, null!); break;
+            case "find": ShowFindPanel(); break;
         }
+    }
+
+    // ---- ページ内検索(#2): 検索欄は WinUI、強調・件数・移動は WebView2 の Find API ----
+    // 標準の検索バー(SuppressDefaultFindDialog=false)は別ウィンドウで、WinUI の WebView2 では
+    // ウィンドウの移動に付いてこず、動かすと入力もできなくなるため使わない(試作で確認)。
+    // セキュリティ: 検索語は FindOptions.FindTerm に渡すだけ。JS に埋め込んだり ExecuteScriptAsync で渡したりしない
+
+    private bool _findEventsHooked;
+
+    // 表示 > 検索(Ctrl+F)
+    private void OnFindClick(object sender, RoutedEventArgs e) => ShowFindPanel();
+
+    // 検索欄の案内文・ボタンの説明を表示言語の文字列にする
+    private void LocalizeFindPanel()
+    {
+        FindBox.PlaceholderText = Localizer.Get("FindPlaceholder");
+        SetFindButtonText(FindPrevButton, "FindPrevious");
+        SetFindButtonText(FindNextButton, "FindNext");
+        SetFindButtonText(FindCloseButton, "FindClose");
+    }
+
+    // ボタンのツールチップと読み上げ名を同じ文字列にする
+    private static void SetFindButtonText(Button button, string key)
+    {
+        var text = Localizer.Get(key);
+        ToolTipService.SetToolTip(button, text);
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(button, text);
+    }
+
+    // Ctrl+F: 検索欄を出して入力欄にフォーカスを置く。前回の語が残っていれば全選択して検索し直す
+    private void ShowFindPanel()
+    {
+        if (!_webReady) return;
+        HookFindEvents();
+        // 開いている間に Ctrl+F を押し直したときは検索し直さない(いまの一致位置が次へ進んでしまうため)
+        var wasOpen = FindPanel.Visibility == Visibility.Visible;
+        FindPanel.Visibility = Visibility.Visible;
+        FindBox.Focus(FocusState.Programmatic);
+        FindBox.SelectAll();
+        if (!wasOpen && FindBox.Text.Length > 0) _ = RunFindAsync();
+    }
+
+    // 件数が変わったら表示を更新する(初回の Ctrl+F で 1 回だけ登録する)
+    private void HookFindEvents()
+    {
+        if (_findEventsHooked) return;
+        try
+        {
+            var find = ContentView.CoreWebView2.Find;
+            find.MatchCountChanged += (s, e) => DispatcherQueue.TryEnqueue(UpdateFindCount);
+            find.ActiveMatchIndexChanged += (s, e) => DispatcherQueue.TryEnqueue(UpdateFindCount);
+            _findEventsHooked = true;
+        }
+        catch (Exception ex) { CrashReporter.Record(ex, "HookFindEvents"); }
+    }
+
+    // 入力が変わるたびに検索する(空なら検索を終えて強調を消す)
+    private void OnFindTextChanged(object sender, TextChangedEventArgs e) => _ = RunFindAsync();
+
+    // 最後に WebView2 で検索した語と、それが 0 件だったか(0 件の音を減らすため)
+    private string _searchedTerm = "";
+    private bool _searchedZero;
+
+    // いまの入力で検索する。
+    // 0 件のとき WebView2 が既定のビープを鳴らす(止める設定は無い)ため、0 件だった語に文字を足しただけの入力は
+    // 検索し直さない(部分一致なので足しても 0 件のまま)。これで音は 0 件になった瞬間の 1 回だけになる
+    private async Task RunFindAsync()
+    {
+        var term = FindBox.Text;
+        try
+        {
+            var core = ContentView.CoreWebView2;
+            if (term.Length == 0)
+            {
+                core.Find.Stop();
+                ResetFindState();
+                return;
+            }
+            if (_searchedZero && _searchedTerm.Length > 0 && term.StartsWith(_searchedTerm, StringComparison.OrdinalIgnoreCase))
+            {
+                FindCount.Text = "0/0";
+                return;
+            }
+            _searchedTerm = term;
+            _searchedZero = false;
+            var options = core.Environment.CreateFindOptions();
+            options.FindTerm = term;
+            options.IsCaseSensitive = false;
+            options.ShouldHighlightAllMatches = true;
+            options.SuppressDefaultFindDialog = true;
+            await core.Find.StartAsync(options);
+            UpdateFindCount();
+        }
+        catch (Exception ex)
+        {
+            // 古いランタイム等で Find API が使えないときは何もしない(落とさない)
+            CrashReporter.Record(ex, "RunFindAsync");
+        }
+    }
+
+    // 件数を「いま何件目/全件」で出す。入力が空なら何も出さない
+    private void UpdateFindCount()
+    {
+        if (FindBox.Text.Length == 0) { FindCount.Text = ""; return; }
+        try
+        {
+            var find = ContentView.CoreWebView2.Find;
+            _searchedZero = find.MatchCount == 0;
+            if (FindBox.Text != _searchedTerm)
+            {
+                // 0 件と見て検索を省いた後に件数が増えた(数え終わる前の 0 だった)ときは、いまの入力で検索し直す
+                if (!_searchedZero) _ = RunFindAsync(); else FindCount.Text = "0/0";
+                return;
+            }
+            FindCount.Text = $"{Math.Max(find.ActiveMatchIndex, 0)}/{find.MatchCount}";
+        }
+        catch { FindCount.Text = ""; }
+    }
+
+    // ウィンドウの最小幅(論理 400px)を、いまの表示倍率で物理ピクセルにして設定する
+    private void ApplyMinimumWidth()
+    {
+        if (this.AppWindow.Presenter is not Microsoft.UI.Windowing.OverlappedPresenter presenter) return;
+        var scale = RootGrid.XamlRoot?.RasterizationScale ?? 1.0;
+        presenter.PreferredMinimumWidth = (int)Math.Ceiling(400 * scale);
+    }
+
+    // 検索の状態(最後に検索した語・0 件か・件数の表示)を初めに戻す
+    private void ResetFindState()
+    {
+        _searchedTerm = "";
+        _searchedZero = false;
+        FindCount.Text = "";
+    }
+
+    // 入力欄のキー: Enter=次へ、Shift+Enter=前へ、Esc=閉じる
+    private void OnFindKeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
+    {
+        if (e.Key == Windows.System.VirtualKey.Enter)
+        {
+            var shift = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift)
+                .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+            if (shift) FindPrevious(); else FindNext();
+            e.Handled = true;
+        }
+        else if (e.Key == Windows.System.VirtualKey.Escape)
+        {
+            CloseFindPanel();
+            e.Handled = true;
+        }
+    }
+
+    private void OnFindPrevClick(object sender, RoutedEventArgs e) => FindPrevious();
+    private void OnFindNextClick(object sender, RoutedEventArgs e) => FindNext();
+    private void OnFindCloseClick(object sender, RoutedEventArgs e) => CloseFindPanel();
+
+    private void FindNext()
+    {
+        if (FindBox.Text.Length == 0) return;
+        try { ContentView.CoreWebView2.Find.FindNext(); } catch (Exception ex) { CrashReporter.Record(ex, "FindNext"); }
+    }
+
+    private void FindPrevious()
+    {
+        if (FindBox.Text.Length == 0) return;
+        try { ContentView.CoreWebView2.Find.FindPrevious(); } catch (Exception ex) { CrashReporter.Record(ex, "FindPrevious"); }
+    }
+
+    // 検索欄を閉じて強調を消し、本文にフォーカスを戻す(入力した語は次に開いたときのために残す)
+    private void CloseFindPanel()
+    {
+        StopFind();
+        ContentView.Focus(FocusState.Programmatic);
+    }
+
+    // 別の文書を開く前に検索を終え、検索欄を閉じる(前の文書の件数や強調を残さない)
+    private void StopFind()
+    {
+        try { ContentView.CoreWebView2?.Find.Stop(); } catch { /* 使えない環境では無視 */ }
+        FindPanel.Visibility = Visibility.Collapsed;
+        ResetFindState();
     }
 
     // [ファイル]→[印刷]: 印刷プレビュー(ダイアログ)を表示する。
@@ -452,6 +645,7 @@ public sealed partial class MainWindow : Window
 
             // 相対パスの画像は http://document/ から読む(OnDocumentResourceRequested が文書フォルダの画像だけを返す)
             var html = MarkdownRenderer.BuildHtml(doc.Text, _currentTheme, _template, DocumentImages.BaseUri);
+            StopFind();
             ContentView.CoreWebView2.NavigateToString(html);
             // ナビゲーションでCSS状態がリセットされるため、文字サイズを再適用する
             ApplyZoom(_zoomFactor);

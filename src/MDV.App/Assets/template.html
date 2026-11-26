@@ -38,6 +38,10 @@
     }
     .markdown-body pre:hover .md-copy-btn { opacity: 1; }
     .md-copy-btn:hover { background: rgba(128,128,128,.3); }
+    /* ページ内検索(#2、Ctrl+F)の一致の色。候補は水色、いま選ばれている一致は橙。
+       文字は黒に固定し、明暗どちらのテーマでも読めるようにする(::search-text 非対応のランタイムでは既定の黄/橙のまま) */
+    ::search-text { background-color: #8fd3ff; color: #000; }
+    ::search-text:current { background-color: #ff9632; color: #000; }
     /* 印刷時: github-markdown-css の本文色(#1F2328/#e6edf3)はテーマ用の準黒/準白のため、
        プリンタの白黒(グレースケール)変換では薄いグレーになってしまう。
        印刷時のみ純黒(#000)に強制して読みやすくする。 */
@@ -172,6 +176,8 @@
       else if (ctrl && (ev.key === '+' || ev.key === '=')) msg = 'zoomIn';
       else if (ctrl && (ev.key === '-' || ev.key === '_')) msg = 'zoomOut';
       else if (ctrl && ev.key === '0') msg = 'zoomReset';
+      // ページ内検索(#2)。ホストの検索欄を開くだけで、検索語はページ側では一切扱わない
+      else if (ctrl && (ev.key === 'f' || ev.key === 'F')) msg = 'find';
       else if (ev.key === 'F5') msg = 'reload';
       else if (ev.key === 'F1') msg = 'about';
       if (msg && window.chrome && window.chrome.webview) {
