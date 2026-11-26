@@ -2,32 +2,23 @@
 
 Windows 11 ネイティブの**閲覧専用 Markdown ビューア**です。英語・日本語・韓国語・スペイン語の UI に対応し、GitHub風のレンダリングを行います。
 
+最新版は **1.1.0.0**（ページ内検索 Ctrl+F に対応）。版ごとの変更は [CHANGELOG.md](CHANGELOG.md) を参照してください。 / Latest: **1.1.0.0** (find in page with Ctrl+F). See [CHANGELOG.md](CHANGELOG.md) for changes in each version.
+
 ## 概要
 
 MDV（Markdown Viewer）は、Markdown ファイルを開いて閲覧することに特化したデスクトップアプリです。編集機能は持たず、GitHub の Markdown プレビューに近い見た目・体験で `.md` ファイルを表示します。
 
 ## インストール
 
-### Microsoft Store（推奨）
+MDV は **Microsoft Store だけで配布**しています。
 
-[Microsoft Store の MDV - Markdown Viewer](https://apps.microsoft.com/detail/9P45KBTKG49K) からインストールできます（Store で「**MDV - Markdown Viewer**」を検索しても見つかります）。Store 版は Microsoft によって署名・配布されるため、**証明書の手動信頼は不要**で、更新も自動的に行われます。
+[Microsoft Store の MDV - Markdown Viewer](https://apps.microsoft.com/detail/9P45KBTKG49K) からインストールできます（Store で「**MDV - Markdown Viewer**」を検索しても見つかります）。Store 版は Microsoft によって署名・配布されるため、**証明書の手動信頼は不要**で、更新も自動的に行われます。アンインストールは Windows の「アプリと機能」から行えます。
 
-### GitHub Releases（自己署名版）
+### 以前の自己署名版を使っている場合
 
-Microsoft Store への一本化に伴い、今後の新規配布は Store が中心になります。以下は自己署名版を手動でインストールする場合の手順です（旧バージョン向け）。
+[GitHub Releases](https://github.com/kajiyajp/MDV/releases) の v1.0.0〜v1.0.4 は配布を終了した旧版で、今後は更新しません。Store 版とはアプリの ID が違うため、自動では Store 版に切り替わりません。「アプリと機能」で旧版（MDV）をアンインストールしてから、Store 版を入れてください。旧版のために信頼した署名証明書（`MDV_signing.cer`）は、不要なら証明書の管理画面（`certlm.msc` の「信頼されたユーザー」）から削除できます。
 
-[Releases](https://github.com/kajiyajp/MDV/releases) から最新版をダウンロードしてください。
-
-1. `MDV.App_x.x.x.x_x64.msix` と `MDV_signing.cer` をダウンロード
-2. **管理者権限の PowerShell** で署名証明書を信頼済みにする（自己署名のため初回のみ必要）:
-
-   ```powershell
-   Import-Certificate -FilePath ".\MDV_signing.cer" -CertStoreLocation Cert:\LocalMachine\TrustedPeople
-   ```
-
-3. `MDV.App_x.x.x.x_x64.msix` をダブルクリックしてインストール
-
-自己完結型パッケージのため、.NET や Windows App SDK ランタイムを別途入れる必要はありません。アンインストールは Windows の「アプリと機能」から行えます。
+MDV is distributed **only through the Microsoft Store**. The self-signed builds v1.0.0 to v1.0.4 on GitHub Releases are discontinued and will not be updated. They have a different app ID, so they do not switch to the Store version automatically: uninstall the old MDV from Apps & features, then install MDV from the Store.
 
 ## 対応機能
 
@@ -42,6 +33,7 @@ Microsoft Store への一本化に伴い、今後の新規配布は Store が中
 - 文書内のスクリプトの実行や、文書からの外部への通信は行わない
 - LaTeX 数式（KaTeX によるレンダリング）
 - Mermaid 図
+- ページ内検索（[表示]→[検索...] または Ctrl+F。一致した箇所を強調して件数を表示し、Enter で次へ、Shift+Enter で前へ、Esc で閉じる）
 - テーマ切替（ライト / ダーク / システム連動）
 - 表示言語の切り替え（英語 / 日本語 / 韓国語 / スペイン語 / システム連動。[表示]→[言語]）。翻訳の無い言語の環境では英語で表示
 - 文字サイズの拡大・縮小・リセット
