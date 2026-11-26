@@ -2,6 +2,8 @@
 
 Windows 11 ネイティブの**閲覧専用 Markdown ビューア**です。英語・日本語・韓国語・スペイン語の UI に対応し、GitHub風のレンダリングを行います。
 
+最新版は **1.1.0.0**（ページ内検索 Ctrl+F に対応）。版ごとの変更は [CHANGELOG.md](CHANGELOG.md) を参照してください。 / Latest: **1.1.0.0** (find in page with Ctrl+F). See [CHANGELOG.md](CHANGELOG.md) for changes in each version.
+
 ## 概要
 
 MDV（Markdown Viewer）は、Markdown ファイルを開いて閲覧することに特化したデスクトップアプリです。編集機能は持たず、GitHub の Markdown プレビューに近い見た目・体験で `.md` ファイルを表示します。
@@ -42,6 +44,7 @@ Microsoft Store への一本化に伴い、今後の新規配布は Store が中
 - 文書内のスクリプトの実行や、文書からの外部への通信は行わない
 - LaTeX 数式（KaTeX によるレンダリング）
 - Mermaid 図
+- ページ内検索（[表示]→[検索...] または Ctrl+F。一致した箇所を強調して件数を表示し、Enter で次へ、Shift+Enter で前へ、Esc で閉じる）
 - テーマ切替（ライト / ダーク / システム連動）
 - 表示言語の切り替え（英語 / 日本語 / 韓国語 / スペイン語 / システム連動。[表示]→[言語]）。翻訳の無い言語の環境では英語で表示
 - 文字サイズの拡大・縮小・リセット
